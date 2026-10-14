@@ -1,13 +1,5 @@
 const photoService = require('../services/photoService');
 
-function formatError(error) {
-  return {
-    success: false,
-    message: error.message || 'Something went wrong.',
-    errors: Array.isArray(error.errors) ? error.errors : [error.message || 'Unexpected error'],
-  };
-}
-
 async function createPhoto(req, res, next) {
   try {
     if (!req.user || !req.user._id) {
@@ -30,8 +22,7 @@ async function createPhoto(req, res, next) {
       data: photo,
     });
   } catch (error) {
-    const status = error.statusCode || 500;
-    return next(error) || res.status(status).json(formatError(error));
+    return next(error);
   }
 }
 
@@ -44,8 +35,7 @@ async function listPhotos(req, res, next) {
       data: result,
     });
   } catch (error) {
-    const status = error.statusCode || 500;
-    return next(error) || res.status(status).json(formatError(error));
+    return next(error);
   }
 }
 
@@ -58,8 +48,7 @@ async function getPhotoById(req, res, next) {
       data: photo,
     });
   } catch (error) {
-    const status = error.statusCode || 500;
-    return next(error) || res.status(status).json(formatError(error));
+    return next(error);
   }
 }
 
@@ -85,8 +74,7 @@ async function updatePhoto(req, res, next) {
       data: photo,
     });
   } catch (error) {
-    const status = error.statusCode || 500;
-    return next(error) || res.status(status).json(formatError(error));
+    return next(error);
   }
 }
 
@@ -111,8 +99,7 @@ async function deletePhoto(req, res, next) {
       data: result,
     });
   } catch (error) {
-    const status = error.statusCode || 500;
-    return next(error) || res.status(status).json(formatError(error));
+    return next(error);
   }
 }
 
