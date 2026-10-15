@@ -3,6 +3,9 @@ import cors from "cors";
 import dotenv from "dotenv";
 import connectDB from "./config/db.js";
 
+// Import your auth routes
+import authRoutes from "./routes/authRoutes.js";
+
 dotenv.config();
 
 const app = express();
@@ -19,6 +22,8 @@ app.get("/", (req, res) => {
     message: "Welcome to Afro-centric API",
   });
 });
+
+app.use("/api/auth", authRoutes);
 
 // Start server after connecting to MongoDB
 const startServer = async () => {
