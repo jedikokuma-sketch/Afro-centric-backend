@@ -305,7 +305,7 @@ export async function createPhotos({ user, files, metadataList }) {
   try {
     for (let index = 0; index < files.length; index += 1) {
       const uploadedAsset = await cloudinaryService.uploadImage(files[index], {
-        folder: 'afrolens/photos',
+        folder: 'Afro-centric/photos',
       });
       uploadedAssets.push(uploadedAsset);
 
