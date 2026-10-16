@@ -1,16 +1,15 @@
 import mongoose from "mongoose";
 
 const photoCategories = [
-  "Culture",
-  "People",
-  "Fashion",
-  "Nature",
-  "Architecture",
-  "Events",
-  "Traditional Life",
-  "Street Photography",
-  "Food",
-  "Wildlife",
+  "culture",
+  "fashion",
+  "people",
+  "places",
+  "traditions",
+  "nature",
+  "architecture",
+  "events",
+  "daily life",
 ];
 
 const photoSchema = new mongoose.Schema(
@@ -20,7 +19,7 @@ const photoSchema = new mongoose.Schema(
       required: [true, "Photo title is required"],
       trim: true,
       minlength: [2, "Title must be at least 2 characters"],
-      maxlength: [120, "Title cannot exceed 120 characters"],
+      maxlength: [150, "Title cannot exceed 150 characters"],
     },
 
     description: {
@@ -59,7 +58,7 @@ const photoSchema = new mongoose.Schema(
 
     country: {
       type: String,
-      required: [true, "Country is required"],
+      default: "",
       trim: true,
       maxlength: [100, "Country cannot exceed 100 characters"],
     },
