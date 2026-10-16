@@ -71,12 +71,19 @@ export function validateImageBuffer(file) {
 }
 
 function ensureCloudinaryConfigured() {
-  const required = ['CLOUDINARY_CLOUD_NAME', 'CLOUDINARY_API_KEY', 'CLOUDINARY_API_SECRET'];
-  if (required.some((key) => !process.env[key])) {
+  const config = {
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET,
+  };
+
+  if (Object.values(config).some((value) => !value)) {
     const error = new Error('Cloudinary is not configured.');
     error.statusCode = 503;
     throw error;
   }
+
+  cloudinary.config(config);
 }
 
 export async function uploadImage(file, { folder = DEFAULT_PHOTO_FOLDER } = {}) {

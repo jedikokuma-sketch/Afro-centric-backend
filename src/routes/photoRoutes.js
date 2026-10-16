@@ -6,12 +6,12 @@ import {
   getPhotoController,
   listPhotosController,
   updatePhotoController,
-} from '../controllers/photoController.mjs';
+} from '../controllers/photoController.js';
 import {
   requirePhotoUser,
   uploadImages,
   validateUploadedImage,
-} from '../middleware/uploadMiddleware.mjs';
+} from '../middleware/uploadMiddleware.js';
 
 const router = express.Router();
 

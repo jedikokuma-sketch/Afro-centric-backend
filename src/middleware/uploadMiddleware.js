@@ -2,7 +2,7 @@ import multer from 'multer';
 import {
   MAX_PHOTOS_PER_REQUEST,
   validateImageBuffer,
-} from '../services/cloudinaryService.mjs';
+} from '../services/cloudinaryService.js';
 
 const upload = multer({
   storage: multer.memoryStorage(),

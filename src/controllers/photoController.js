@@ -4,7 +4,7 @@ import {
   getPhotoById,
   listPhotos,
   updatePhoto,
-} from '../services/photoService.mjs';
+} from '../services/photoService.js';
 
 export async function createPhotoController(req, res, next) {
   try {

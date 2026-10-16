@@ -1,17 +1,16 @@
 import { Types } from 'mongoose';
-import cloudinaryService, { MAX_PHOTOS_PER_REQUEST } from './cloudinaryService.mjs';
+import cloudinaryService, { MAX_PHOTOS_PER_REQUEST } from './cloudinaryService.js';
 
 export const ALLOWED_CATEGORIES = Object.freeze([
-  'Culture',
-  'People',
-  'Fashion',
-  'Nature',
-  'Architecture',
-  'Events',
-  'Traditional Life',
-  'Street Photography',
-  'Food',
-  'Wildlife',
+ "culture",
+  "fashion",
+  "people",
+  "places",
+  "traditions",
+  "nature",
+  "architecture",
+  "events",
+  "daily life",
 ]);
 
 const allowedMetadataFields = new Set([
@@ -282,9 +281,27 @@ export async function createPhotos({ user, files, metadataList }) {
     requireCreationFields: true,
   }));
   const Photo = await getPhotoModel();
+  const categoryPath = Photo.schema?.path('category');
+  const schemaCategories = categoryPath?.enumValues;
+
+  if (Array.isArray(schemaCategories) && schemaCategories.length > 0) {
+    for (const metadata of cleanMetadataList) {
+      const schemaCategory = schemaCategories.find(
+        (value) => value.toLowerCase() === metadata.category.toLowerCase(),
+      );
+      if (!schemaCategory) {
+        throw createError(
+          `Category "${metadata.category}" is not supported by the current Photo schema.`,
+          400,
+        );
+      }
+      metadata.category = schemaCategory;
+    }
+  }
 
   const uploadedAssets = [];
   const createdPhotos = [];
+  let operation = 'Cloudinary upload';
   try {
     for (let index = 0; index < files.length; index += 1) {
       const uploadedAsset = await cloudinaryService.uploadImage(files[index], {
@@ -292,6 +309,7 @@ export async function createPhotos({ user, files, metadataList }) {
       });
       uploadedAssets.push(uploadedAsset);
 
+      operation = 'MongoDB photo save';
       const photo = new Photo({
         ...cleanMetadataList[index],
         photographer: user._id,
@@ -300,6 +318,7 @@ export async function createPhotos({ user, files, metadataList }) {
       });
       await photo.save();
       createdPhotos.push(photo);
+      operation = 'Cloudinary upload';
     }
     return createdPhotos.map((photo) => (photo.toObject ? photo.toObject() : photo));
   } catch (error) {
@@ -327,6 +346,14 @@ export async function createPhotos({ user, files, metadataList }) {
     if (error?.statusCode) {
       throw error;
     }
+    console.error('Photo batch operation failed.', {
+      operation,
+      errorName: error?.name,
+      errorCode: error?.code,
+      errorMessage: typeof error?.message === 'string'
+        ? error.message.replace(/mongodb(?:\+srv)?:\/\/\S+/gi, '[redacted MongoDB URI]').slice(0, 300)
+        : undefined,
+    });
     throw databaseError(error, 'Photo batch could not be saved because a database operation failed.');
   }
 }
