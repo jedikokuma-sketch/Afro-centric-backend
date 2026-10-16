@@ -1,5 +1,5 @@
 import { Types } from 'mongoose';
-import cloudinaryService from './cloudinaryService.mjs';
+import cloudinaryService, { MAX_PHOTOS_PER_REQUEST } from './cloudinaryService.mjs';
 
 export const ALLOWED_CATEGORIES = Object.freeze([
   'Culture',
@@ -127,6 +127,20 @@ function normalizeString(value, field, { required = false, maxLength = 255 } = {
   return normalized;
 }
 
+function normalizeCategory(value) {
+  const category = normalizeString(value, 'category', {
+    required: true,
+    maxLength: fieldLimits.category,
+  });
+  const canonicalCategory = ALLOWED_CATEGORIES.find(
+    (allowedCategory) => allowedCategory.toLowerCase() === category.toLowerCase(),
+  );
+  if (!canonicalCategory) {
+    throw createError(`Category must be one of: ${ALLOWED_CATEGORIES.join(', ')}.`, 400);
+  }
+  return canonicalCategory;
+}
+
 function normalizeTags(value) {
   let tags = value;
   if (typeof tags === 'string') {
@@ -182,11 +196,7 @@ function normalizeMetadata(input, { requireCreationFields = false } = {}) {
     }
   }
   if (Object.hasOwn(metadata, 'category')) {
-    const category = normalizeString(metadata.category, 'category', { required: true, maxLength: fieldLimits.category });
-    if (!ALLOWED_CATEGORIES.includes(category)) {
-      throw createError(`Category must be one of: ${ALLOWED_CATEGORIES.join(', ')}.`, 400);
-    }
-    result.category = category;
+    result.category = normalizeCategory(metadata.category);
   }
   if (Object.hasOwn(metadata, 'tags')) {
     result.tags = normalizeTags(metadata.tags);
@@ -255,40 +265,79 @@ async function findPhotoById(model, photoId) {
   return query;
 }
 
-export async function createPhoto({ user, file, metadata }) {
+export async function createPhotos({ user, files, metadataList }) {
   assertAuthenticatedUser(user);
-  if (!file?.buffer) {
-    throw createError('An image is required in the "image" field.', 400);
+  if (!Array.isArray(files) || files.length === 0) {
+    throw createError('At least one image is required in the "image" field.', 400);
   }
-  cloudinaryService.validateImageBuffer(file);
-  const cleanMetadata = normalizeMetadata(metadata, { requireCreationFields: true });
+  if (files.length > MAX_PHOTOS_PER_REQUEST) {
+    throw createError(`No more than ${MAX_PHOTOS_PER_REQUEST} images may be uploaded per request.`, 400);
+  }
+  if (!Array.isArray(metadataList) || metadataList.length !== files.length) {
+    throw createError('Provide exactly one metadata object for each image, in upload order.', 400);
+  }
+
+  files.forEach((file) => cloudinaryService.validateImageBuffer(file));
+  const cleanMetadataList = metadataList.map((metadata) => normalizeMetadata(metadata, {
+    requireCreationFields: true,
+  }));
   const Photo = await getPhotoModel();
 
-  let uploadedAsset;
+  const uploadedAssets = [];
+  const createdPhotos = [];
   try {
-    uploadedAsset = await cloudinaryService.uploadImage(file, { folder: 'afrolens/photos' });
-    const photo = new Photo({
-      ...cleanMetadata,
-      photographer: user._id,
-      imageUrl: uploadedAsset.secure_url,
-      cloudinaryPublicId: uploadedAsset.public_id,
-    });
-    try {
+    for (let index = 0; index < files.length; index += 1) {
+      const uploadedAsset = await cloudinaryService.uploadImage(files[index], {
+        folder: 'afrolens/photos',
+      });
+      uploadedAssets.push(uploadedAsset);
+
+      const photo = new Photo({
+        ...cleanMetadataList[index],
+        photographer: user._id,
+        imageUrl: uploadedAsset.secure_url,
+        cloudinaryPublicId: uploadedAsset.public_id,
+      });
       await photo.save();
-    } catch (cause) {
-      throw databaseError(cause, 'Photo could not be saved because the database operation failed.');
+      createdPhotos.push(photo);
     }
-    return photo.toObject ? photo.toObject() : photo;
+    return createdPhotos.map((photo) => (photo.toObject ? photo.toObject() : photo));
   } catch (error) {
-    if (uploadedAsset?.public_id) {
+    for (const photo of createdPhotos.reverse()) {
       try {
-        await cloudinaryService.deleteImage(uploadedAsset.public_id);
-      } catch {
-        console.warn('Photo upload compensation failed; original error retained.');
+        const result = await Photo.deleteOne({ _id: photo._id });
+        if (result.deletedCount !== 1) {
+          console.warn('Photo batch rollback could not confirm removal of a saved database record.');
+        }
+      } catch (cleanupError) {
+        console.warn('Photo batch database rollback failed.', cleanupError.message);
       }
     }
-    throw error;
+    for (const asset of uploadedAssets.reverse()) {
+      try {
+        await cloudinaryService.deleteImage(asset.public_id);
+      } catch (cleanupError) {
+        console.warn('Photo batch Cloudinary rollback failed.', cleanupError.message);
+      }
+    }
+
+    if (error?.name === 'ValidationError' || error?.name === 'CastError') {
+      throw databaseError(error, 'Photo data does not satisfy the shared Photo schema.');
+    }
+    if (error?.statusCode) {
+      throw error;
+    }
+    throw databaseError(error, 'Photo batch could not be saved because a database operation failed.');
   }
+}
+
+export async function createPhoto({ user, file, metadata }) {
+  const [photo] = await createPhotos({
+    user,
+    files: file ? [file] : [],
+    metadataList: [metadata],
+  });
+  return photo;
 }
 
 export async function listPhotos(rawQuery = {}) {
@@ -301,13 +350,10 @@ export async function listPhotos(rawQuery = {}) {
   const page = parsePageValue(query.page, 'page', 1);
   const limit = parsePageValue(query.limit, 'limit', 12, 50);
   const search = queryString(query, 'search');
-  const category = queryString(query, 'category', 50);
+  const rawCategory = queryString(query, 'category', 50);
+  const category = rawCategory ? normalizeCategory(rawCategory) : '';
   const country = queryString(query, 'country');
   const tag = queryString(query, 'tag', fieldLimits.tag);
-
-  if (category && !ALLOWED_CATEGORIES.includes(category)) {
-    throw createError(`Category must be one of: ${ALLOWED_CATEGORIES.join(', ')}.`, 400);
-  }
 
   const filter = {};
   if (category) filter.category = category;

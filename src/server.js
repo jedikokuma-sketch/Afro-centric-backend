@@ -1,12 +1,11 @@
+import "dotenv/config";
 import express from "express";
 import cors from "cors";
-import dotenv from "dotenv";
 import connectDB from "./config/db.js";
-
-// Import your auth routes
 import authRoutes from "./routes/authRoutes.js";
-
-dotenv.config();
+import photoRoutes from "./routes/photoRoutes.mjs";
+import { errorHandler } from "./middleware/errorMiddleware.mjs";
+import { notFoundHandler } from "./middleware/notFoundMiddleware.mjs";
 
 const app = express();
 
@@ -24,6 +23,10 @@ app.get("/", (req, res) => {
 });
 
 app.use("/api/auth", authRoutes);
+app.use("/api/photos", photoRoutes);
+
+app.use(notFoundHandler);
+app.use(errorHandler);
 
 // Start server after connecting to MongoDB
 const startServer = async () => {

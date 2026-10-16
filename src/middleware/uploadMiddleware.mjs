@@ -1,11 +1,14 @@
 import multer from 'multer';
-import { validateImageBuffer } from '../services/cloudinaryService.mjs';
+import {
+  MAX_PHOTOS_PER_REQUEST,
+  validateImageBuffer,
+} from '../services/cloudinaryService.mjs';
 
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: {
     fileSize: 10 * 1024 * 1024,
-    files: 1,
+    files: MAX_PHOTOS_PER_REQUEST,
   },
 });
 
@@ -18,8 +21,8 @@ export function requirePhotoUser(req, res, next) {
   return next();
 }
 
-export function uploadSingle(req, res, next) {
-  upload.single('image')(req, res, (error) => {
+export function uploadImages(req, res, next) {
+  upload.array('image', MAX_PHOTOS_PER_REQUEST)(req, res, (error) => {
     if (!error) {
       return next();
     }
@@ -27,9 +30,9 @@ export function uploadSingle(req, res, next) {
     if (error.code === 'LIMIT_FILE_SIZE') {
       error.statusCode = 413;
       error.message = 'Image exceeds the 10MB upload limit.';
-    } else if (error.code === 'LIMIT_UNEXPECTED_FILE') {
+    } else if (error.code === 'LIMIT_FILE_COUNT' || error.code === 'LIMIT_UNEXPECTED_FILE') {
       error.statusCode = 400;
-      error.message = 'Only one file in the "image" field is allowed.';
+      error.message = `Upload no more than ${MAX_PHOTOS_PER_REQUEST} files in the "image" field.`;
     }
 
     return next(error);
@@ -38,13 +41,13 @@ export function uploadSingle(req, res, next) {
 
 export function validateUploadedImage(req, res, next) {
   try {
-    if (!req.file) {
-      const error = new Error('An image is required in the "image" field.');
+    if (!Array.isArray(req.files) || req.files.length === 0) {
+      const error = new Error('At least one image is required in the "image" field.');
       error.statusCode = 400;
       throw error;
     }
 
-    validateImageBuffer(req.file);
+    req.files.forEach(validateImageBuffer);
     return next();
   } catch (error) {
     return next(error);

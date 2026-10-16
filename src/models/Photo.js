@@ -1,37 +1,16 @@
-<<<<<<< HEAD
-const mongoose = require('mongoose');
-
-const photoSchema = new mongoose.Schema(
-  {
-    title: { type: String, required: true, trim: true, maxlength: 120 },
-    description: { type: String, trim: true, maxlength: 2000 },
-    imageUrl: { type: String, required: true },
-    cloudinaryPublicId: { type: String, required: true },
-    photographer: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-    category: { type: String, required: true, enum: ['Culture', 'People', 'Fashion', 'Nature', 'Architecture', 'Events', 'Traditional Life', 'Street Photography', 'Food', 'Wildlife'] },
-    country: { type: String, required: true, trim: true, maxlength: 100 },
-    location: { type: String, trim: true, maxlength: 200 },
-    tags: [{ type: String, trim: true, maxlength: 50 }],
-  },
-  { timestamps: true }
-);
-
-const Photo = mongoose.models.Photo || mongoose.model('Photo', photoSchema);
-
-module.exports = Photo;
-=======
 import mongoose from "mongoose";
 
 const photoCategories = [
-  "culture",
-  "fashion",
-  "people",
-  "places",
-  "traditions",
-  "nature",
-  "architecture",
-  "events",
-  "daily life",
+  "Culture",
+  "People",
+  "Fashion",
+  "Nature",
+  "Architecture",
+  "Events",
+  "Traditional Life",
+  "Street Photography",
+  "Food",
+  "Wildlife",
 ];
 
 const photoSchema = new mongoose.Schema(
@@ -41,7 +20,7 @@ const photoSchema = new mongoose.Schema(
       required: [true, "Photo title is required"],
       trim: true,
       minlength: [2, "Title must be at least 2 characters"],
-      maxlength: [150, "Title cannot exceed 150 characters"],
+      maxlength: [120, "Title cannot exceed 120 characters"],
     },
 
     description: {
@@ -80,7 +59,7 @@ const photoSchema = new mongoose.Schema(
 
     country: {
       type: String,
-      default: "",
+      required: [true, "Country is required"],
       trim: true,
       maxlength: [100, "Country cannot exceed 100 characters"],
     },
@@ -126,4 +105,3 @@ const Photo = mongoose.model("Photo", photoSchema);
 
 export { photoCategories };
 export default Photo;
->>>>>>> a179c7fc856ef31d2c79258805215be59521be9f

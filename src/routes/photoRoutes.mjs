@@ -9,13 +9,13 @@ import {
 } from '../controllers/photoController.mjs';
 import {
   requirePhotoUser,
-  uploadSingle,
+  uploadImages,
   validateUploadedImage,
 } from '../middleware/uploadMiddleware.mjs';
 
 const router = express.Router();
 
-router.post('/', protect, requirePhotoUser, uploadSingle, validateUploadedImage, createPhotoController);
+router.post('/', protect, requirePhotoUser, uploadImages, validateUploadedImage, createPhotoController);
 router.get('/', listPhotosController);
 router.get('/:id', getPhotoController);
 router.patch('/:id', protect, updatePhotoController);

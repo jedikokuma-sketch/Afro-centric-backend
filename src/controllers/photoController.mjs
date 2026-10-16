@@ -1,5 +1,5 @@
 import {
-  createPhoto,
+  createPhotos,
   deletePhoto,
   getPhotoById,
   listPhotos,
@@ -8,16 +8,35 @@ import {
 
 export async function createPhotoController(req, res, next) {
   try {
-    const photo = await createPhoto({
+    const files = req.files;
+    let metadata;
+    if (files.length === 1) {
+      metadata = [req.body];
+    } else {
+      try {
+        metadata = JSON.parse(req.body.photos);
+      } catch {
+        const error = new Error('For multiple images, provide a JSON array of metadata objects in the "photos" field.');
+        error.statusCode = 400;
+        throw error;
+      }
+      if (!Array.isArray(metadata)) {
+        const error = new Error('The "photos" field must be a JSON array of metadata objects.');
+        error.statusCode = 400;
+        throw error;
+      }
+    }
+
+    const photos = await createPhotos({
       user: req.user,
-      file: req.file,
-      metadata: req.body,
+      files,
+      metadataList: metadata,
     });
 
     return res.status(201).json({
       success: true,
-      message: 'Photo uploaded successfully.',
-      data: photo,
+      message: photos.length === 1 ? 'Photo uploaded successfully.' : 'Photos uploaded successfully.',
+      data: photos.length === 1 ? photos[0] : photos,
     });
   } catch (error) {
     return next(error);
