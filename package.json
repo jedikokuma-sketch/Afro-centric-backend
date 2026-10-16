@@ -4,29 +4,28 @@
   "description": "",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js",
-    "test": "jest --runInBand"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/jedikokuma-sketch/Afro-centric-backend.git"
   },
   "keywords": [],
-  "type": "commonjs",
+  "type": "module",
   "bugs": {
     "url": "https://github.com/jedikokuma-sketch/Afro-centric-backend/issues"
   },
   "homepage": "https://github.com/jedikokuma-sketch/Afro-centric-backend#readme",
   "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "cloudinary": "^2.11.0",
     "cors": "^2.8.6",
     "dotenv": "^18.0.7",
     "express": "^5.3.0",
-    "mongoose": "^9.11.1"
-  },
-  "devDependencies": {
-    "cloudinary": "^2.11.0",
-    "jest": "^30.5.2",
-    "multer": "^2.4.0",
-    "supertest": "^7.3.1"
+    "jsonwebtoken": "^9.0.3",
+    "mongoose": "^9.11.1",
+    "multer": "^2.4.0"
   }
 }
