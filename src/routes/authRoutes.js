@@ -5,11 +5,13 @@ import {
     getMe,
 } from '../controllers/authController.js';
 import { protect } from '../middleware/authMiddleware.js';
-
+import { authLimiter } from '../middleware/rateLimitMiddleware.js';
+import { validateRegister, validateLogin } from '../middleware/validationMiddleware.js';
 const router = express.Router();
 
-router.post('/register', registerUser);
-router.post('/login', loginUser);
+router.post('/register', authLimiter, validateRegister, registerUser);
+router.post('/login', authLimiter, validateLogin, loginUser);
+
 router.get('/me', protect, getMe);
 
 export default router;
