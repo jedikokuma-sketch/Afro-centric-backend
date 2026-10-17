@@ -81,25 +81,7 @@ export const loginUser = async (req, res, next) => {
                     role: user.role,
                     token: generateToken(user._id),
                 },
-        if (user.isSuspended) {
-            return res.status(403).json({
-                success: false,
-                message: 'Your account has been suspended. Please contact support.',
             });
-        }
-
-        // 4. Send success response with token
-        res.json({
-            success: true,
-            message: 'Login successful',
-            data: {
-                _id: user._id,
-                name: user.name,
-                email: user.email,
-                role: user.role,
-                token: generateToken(user._id),
-            },
-        });
     } catch (error) {
         next(error);
     }
