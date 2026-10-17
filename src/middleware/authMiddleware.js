@@ -14,12 +14,19 @@ export const protect = async (req, res, next) => {
             // Find user from the token (excluding password)
             req.user = await User.findById(decoded.id).select('-password');
 
-           return next();
+            if (!req.user || req.user.accountStatus !== 'active') {
+                return res.status(401).json({
+                    success: false,
+                    message: 'Account not found or inactive. Please log in again.',
+                });
+            }
+
+            return next();
         } catch (error) {
             console.error(error);
             return res.status(401).json({
                 success: false,
-                message: 'Not authorized, token failed',
+                message: 'Not authorized, kindly login',
             });
         }
     }
@@ -27,7 +34,7 @@ export const protect = async (req, res, next) => {
     if (!token) {
         return res.status(401).json({
             success: false,
-            message: 'Not authorized, no token provided',
+            message: 'Not authorized, kindly login',
         });
     }
 };
