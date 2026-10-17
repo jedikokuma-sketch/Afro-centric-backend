@@ -53,3 +53,24 @@ export function validateUploadedImage(req, res, next) {
     return next(error);
   }
 }
+
+export function uploadSingleImage(req, res, next) {
+  upload.single('image')(req, res, (error) => {
+    if (!error) {
+      return next();
+    }
+
+    if (error.code === 'LIMIT_FILE_SIZE') {
+      error.statusCode = 413;
+      error.message = 'Image exceeds the 10MB upload limit.';
+    } else if (
+      error.code === 'LIMIT_UNEXPECTED_FILE' ||
+      error.code === 'LIMIT_FILE_COUNT'
+    ) {
+      error.statusCode = 400;
+      error.message = 'Upload exactly one file using the "image" field.';
+    }
+
+    return next(error);
+  });
+}
