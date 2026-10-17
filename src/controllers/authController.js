@@ -63,7 +63,7 @@ export const loginUser = async (req, res, next) => {
         }
 
         // 3. Check if account is suspended
-            if (user.isSuspended) {
+            if (user.accountStatus === 'suspended') {
                 return res.status(403).json({
                     success: false,
                     message: 'Your account has been suspended. Please contact support.',
