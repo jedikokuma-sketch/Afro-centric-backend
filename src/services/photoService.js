@@ -2,7 +2,7 @@ import { Types } from 'mongoose';
 import cloudinaryService, { MAX_PHOTOS_PER_REQUEST } from './cloudinaryService.js';
 
 export const ALLOWED_CATEGORIES = Object.freeze([
- "culture",
+  "culture",
   "fashion",
   "people",
   "places",
@@ -418,20 +418,62 @@ export async function listPhotos(rawQuery = {}) {
   };
 }
 
+
 export async function getPhotoById(photoId) {
   assertPhotoId(photoId);
+
   const Photo = await getPhotoModel();
+
   let photo;
+
   try {
     photo = await findPhotoById(Photo, photoId);
   } catch (cause) {
-    throw databaseError(cause, 'Photo could not be fetched because the database operation failed.');
+    throw databaseError(
+      cause,
+      'Photo could not be fetched because the database operation failed.'
+    );
   }
+
   if (!photo) {
     throw createError('Photo not found.', 404);
   }
-  return photo.toObject ? photo.toObject() : photo;
+
+  const photoData = photo.toObject ? photo.toObject() : photo;
+
+  try {
+    const [{ default: Comment }, { default: Like }] = await Promise.all([
+      import('../models/Comment.js'),
+      import('../models/Like.js'),
+    ]);
+
+    const [comments, likes] = await Promise.all([
+      Comment.find({ photo: photoId })
+        .populate('user', 'name profilePicture')
+        .sort({ createdAt: -1 })
+        .lean(),
+
+      Like.find({ photo: photoId })
+        .populate('user', 'name profilePicture')
+        .sort({ createdAt: -1 })
+        .lean(),
+    ]);
+
+    return {
+      ...photoData,
+      comments,
+      likes,
+      commentCount: comments.length,
+      likeCount: likes.length,
+    };
+  } catch (cause) {
+    throw databaseError(
+      cause,
+      'Photo was fetched, but its comments and likes could not be retrieved.'
+    );
+  }
 }
+
 
 export async function updatePhoto({ photoId, user, updates }) {
   assertAuthenticatedUser(user);

@@ -4,6 +4,10 @@ import dotenv from "dotenv";
 import connectDB from "./config/db.js";
 import authRoutes from "./routes/authRoutes.js";
 import photoRoutes from "./routes/photoRoutes.js";
+import commentRoutes from "./routes/commentRoutes.js";
+import likeRoutes from "./routes/likeRoutes.js";
+// import userRoutes from "./routes/userRoutes.js";
+// import adminRoutes from "./routes/adminRoutes.js";
 
 import notFoundMiddleware from "./middleware/notFoundMiddleware.js";
 import errorMiddleware from "./middleware/errorMiddleware.js";
@@ -29,6 +33,10 @@ app.get("/", (req, res) => {
 // API routes
 app.use("/api/auth", authRoutes);
 app.use("/api/photos", photoRoutes);
+app.use("/api/photos", commentRoutes);
+app.use("/api/photos", likeRoutes);
+// app.use("/api/users", userRoutes);
+// app.use("/api/admin", adminRoutes);
 
 // Handle unknown routes (must come after API routes)
 app.use(notFoundMiddleware);
