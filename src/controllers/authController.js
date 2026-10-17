@@ -28,21 +28,21 @@ export const registerUser = async (req, res, next) => {
             role: 'user', // Force default role
         });
 
-            res.status(201).json({
-                success: true,
-                message: 'Registration successful',
-                data: {
-                    _id: user._id,
-                    name: user.name,
-                    email: user.email,
-                    role: user.role,
-                    token: generateToken(user._id),
-                },
-            });
-        } catch (error) {
-            next(error);
-        }
-    };
+        res.status(201).json({
+            success: true,
+            message: 'Registration successful',
+            data: {
+                _id: user._id,
+                name: user.name,
+                email: user.email,
+                role: user.role,
+                token: generateToken(user._id),
+            },
+        });
+    } catch (error) {
+        next(error);
+    }
+};
 
 // @desc Authenticate user & get token
 // @route POST /api/auth/login
@@ -53,7 +53,7 @@ export const loginUser = async (req, res, next) => {
 
         // 1. Find user by email and include password field
         const user = await User.findOne({ email }).select('+password');
-
+       
         // 2. Check if user exists AND use the model's built-in comparePassword method
         if (!user || !(await user.comparePassword(password))) {
             return res.status(401).json({
@@ -81,10 +81,28 @@ export const loginUser = async (req, res, next) => {
                     role: user.role,
                     token: generateToken(user._id),
                 },
+        if (user.isSuspended) {
+            return res.status(403).json({
+                success: false,
+                message: 'Your account has been suspended. Please contact support.',
             });
-        } catch (error) {
-            next(error);
         }
+
+        // 4. Send success response with token
+        res.json({
+            success: true,
+            message: 'Login successful',
+            data: {
+                _id: user._id,
+                name: user.name,
+                email: user.email,
+                role: user.role,
+                token: generateToken(user._id),
+            },
+        });
+    } catch (error) {
+        next(error);
+    }
 };
 
 // @desc Get current user profile
@@ -100,7 +118,7 @@ export const getMe = async (req, res, next) => {
                 message: 'User not found',
             });
         }
-        
+
         res.json({
             success: true,
             data: {
