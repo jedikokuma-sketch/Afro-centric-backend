@@ -53,8 +53,8 @@ export const loginUser = async (req, res, next) => {
 
         // 1. Find user by email and include password field
         const user = await User.findOne({ email }).select('+password');
-       
-        // 2. Check if user exists AND use the model's built-in comparePassword method
+
+        // 2. Check if user exists and password is correct
         if (!user || !(await user.comparePassword(password))) {
             return res.status(401).json({
                 success: false,
@@ -63,25 +63,7 @@ export const loginUser = async (req, res, next) => {
         }
 
         // 3. Check if account is suspended
-            if (user.accountStatus === 'suspended') {
-                return res.status(403).json({
-                    success: false,
-                    message: 'Your account has been suspended. Please contact support.',
-                });
-            }
-
-        // 4. Send success response with token
-            res.json({
-                success: true,
-                message: 'Login successful',
-                data: {
-                    _id: user._id,
-                    name: user.name,
-                    email: user.email,
-                    role: user.role,
-                    token: generateToken(user._id),
-                },
-        if (user.isSuspended) {
+        if (user.accountStatus === 'suspended') {
             return res.status(403).json({
                 success: false,
                 message: 'Your account has been suspended. Please contact support.',
@@ -89,7 +71,7 @@ export const loginUser = async (req, res, next) => {
         }
 
         // 4. Send success response with token
-        res.json({
+        return res.status(200).json({
             success: true,
             message: 'Login successful',
             data: {
