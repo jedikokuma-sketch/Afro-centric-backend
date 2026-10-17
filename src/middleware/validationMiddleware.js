@@ -45,7 +45,7 @@ export const validateLogin = [
     .withMessage('Email is required')
     .isEmail()
     .withMessage('Please provide a valid email address'),
-    body('pasword')
+    body('password')
     .notEmpty()
     .withMessage('Password is required'),
     validate,

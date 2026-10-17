@@ -61,7 +61,7 @@ export function validateImageBuffer(file) {
 
   const mimeType = typeof file?.mimetype === 'string' ? file.mimetype.toLowerCase() : '';
   if (mimeType && (!acceptedMimeTypes.has(mimeType)
-      || (mimeType !== `image/${format}` && !(format === 'jpeg' && mimeType === 'image/jpg')))) {
+    || (mimeType !== `image/${format}` && !(format === 'jpeg' && mimeType === 'image/jpg')))) {
     const error = new Error('Image content does not match its declared media type.');
     error.statusCode = 415;
     throw error;
@@ -95,6 +95,12 @@ export async function uploadImage(file, { folder = DEFAULT_PHOTO_FOLDER } = {}) 
       { folder, resource_type: 'image', overwrite: false },
       (error, result) => {
         if (error) {
+          console.error('Cloudinary upload error:', {
+            message: error.message,
+            name: error.name,
+            http_code: error.http_code,
+          });
+
           const uploadError = new Error('Cloudinary image upload failed.');
           uploadError.statusCode = 503;
           uploadError.cause = error;
